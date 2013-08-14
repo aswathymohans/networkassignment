@@ -1,0 +1,82 @@
+#include<stdio.h>
+#include<netinet/in.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<string.h>
+#include<stdlib.h>
+#define MAX 80
+#define PORT 43454
+#define SA struct sockaddr
+
+void func(int sockfd)
+{
+   int n;
+   /* buffer to store the data received from the server */
+   char bufferread[MAX];
+   /* buffer contains data to be sent from the client */
+   char bufferwrite[MAX];
+
+   for(;;)
+   {
+      /* bzero function places nbyte null bytes in the buffer */ 
+      bzero(bufferwrite,sizeof(bufferwrite));
+      bzero(bufferread,sizeof(bufferread));
+
+      /* enter message to be sent to server */
+      printf(“Enter the string : “);
+      n=0;
+      while((bufferwrite[n++]=getchar())!=’\n’);
+      /* sending message to the server */
+      write(sockfd,bufferwrite,sizeof(bufferwrite));
+
+     /* if client exit */
+     if((strncmp(bufferwrite,”exit”,4))==0)
+     {
+        printf(“Client Exit…\n”);
+        break;
+     }
+
+     /* receiving message from the server */
+     read(sockfd,bufferread,sizeof(bufferread));
+     printf(“From Server : %s”,bufferread);
+     /* if server exits */
+     if((strncmp(bufferread,”exit”,4))==0)
+     {
+        printf(“Client Exit as Server exited…\n”);
+        break;
+     }
+   }
+}
+
+int main()
+{
+   int sockfd;
+   struct sockaddr_in servaddr,cli;
+
+   /* creating socket using system call socket */
+   sockfd=socket(AF_INET,SOCK_STREAM,0);
+   if(sockfd==-1)
+   {
+      printf(“socket creation failed…\n”);
+      exit(0);
+   }
+   else
+      printf(“Socket successfully created..\n”);
+   bzero(&servaddr,sizeof(servaddr));
+   servaddr.sin_family=AF_INET;
+   servaddr.sin_addr.s_addr=inet_addr(“127.0.0.1″);
+   servaddr.sin_port=htons(PORT);
+
+   /* sending connection request to the server */
+   if(connect(sockfd,(SA *)&servaddr,sizeof(servaddr))!=0)
+   {
+      printf(“connection with the server failed…\n”);
+      exit(0);
+   }
+   else
+      printf(“connected to the server..\n”);
+   func(sockfd);
+   /* closing socket */
+   close(sockfd);
+}
